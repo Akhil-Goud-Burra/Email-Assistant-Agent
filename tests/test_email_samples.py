@@ -1,3 +1,7 @@
+/*
+1. Sample Email for testing the router.
+2. Key parts: author, to, subject, email_thread, body.
+*/
 COLLEAGUE_QUESTION = {
     "author": "Alice Smith <alice.smith@company.com>",
     "to": "John Doe <john.doe@company.com>",
