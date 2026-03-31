@@ -4,11 +4,9 @@ from pydantic import BaseModel, Field
 from typing_extensions import TypedDict, Literal, Annotated
 from langgraph.graph import add_messages
 
-/*
-1. class Router(BaseModel): This defines the output format of AI.
-2. reasoning: str: AI must explain why it made the decision.
-3. classification: Literal["ignore", "respond", "notify"]: AI must choose ONLY one of these three options.
-*/
+# 1. class Router(BaseModel): This defines the output format of AI.
+# 2. reasoning: str: AI must explain why it made the decision.
+# 3. classification: Literal["ignore", "respond", "notify"]: AI must choose ONLY one of these three options.
 class Router(BaseModel):
     """Analyze the unread email and route it according to its content."""
     
@@ -23,9 +21,7 @@ class Router(BaseModel):
     )
 
 
-/*
-class State(TypedDict): This defines the state of the graph.
-*/
+# class State(TypedDict): This defines the state of the graph.
 class State(TypedDict):
     """Graph state definition."""
     email_input: dict
