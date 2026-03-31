@@ -13,7 +13,7 @@ def test_router():
     """Test the email router with a sample email."""
     
     print("="*60)
-    print("🧪 TESTING EMAIL ROUTER")
+    print("TESTING EMAIL ROUTER")
     print("="*60)
     
     # Get the router LLM
@@ -35,13 +35,13 @@ Rules:
 """
     
     # Test the router
-    print(f"\n📧 Email from: {email['author']}")
+    print(f"\nEmail from: {email['author']}")
     print(f"Subject: {email['subject']}")
-    print("\n🤔 Analyzing...")
+    print("\n Analyzing...")
     
     result = llm_router.invoke(prompt)
     
-    print(f"\n✅ RESULT:")
+    print(f"\n RESULT:")
     print(f"  Classification: {result.classification.upper()}")
     print(f"  Reasoning: {result.reasoning}")
     
