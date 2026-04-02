@@ -1,82 +1,120 @@
-import os
+"""Main entry point for the email assistant."""
+
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
-from config.profile import PROFILE, PROMPT_INSTRUCTIONS
-from config.prompts import triage_system_prompt, triage_user_prompt
+from config.profile import PROFILE
 from tests.test_email_samples import COLLEAGUE_QUESTION, MARKETING_EMAIL, SICK_NOTIFICATION
-from utils.llm import get_router_llm
+from graph.email_agent import create_email_agent
 
 
-def test_triage(email, email_name):
-    """Test the triage router with an email."""
+def show_graph():
+    """Quick graph visualization."""
+    agent = create_email_agent()
+    
+    # Try PNG first
+    try:
+        with open("graph.png", "wb") as f:
+            f.write(agent.get_graph(xray=True).draw_mermaid_png())
+        print("✅ Graph saved: graph.png")
+    except Exception:
+        print(agent.get_graph(xray=True).draw_ascii())
+
+def test_langgraph_workflow():
+    """Test the complete LangGraph workflow with multiple emails."""
+    print("="*60)
+    print("🤖 LANGGRAPH EMAIL AGENT WORKFLOW")
+    print("="*60)
+    print(f"\n👤 Assistant for: {PROFILE['full_name']}")
+    print(f"📋 Background: {PROFILE['user_profile_background']}\n")
+    
+    # Create the email agent graph
+    print("🔧 Building email agent graph...")
+    email_agent = create_email_agent()
+    print("✅ Graph compiled successfully!\n")
+
+    # Test emails
+    test_emails = [
+        ("Marketing Email", MARKETING_EMAIL),
+        ("Colleague Question", COLLEAGUE_QUESTION),
+        ("Sick Notification", SICK_NOTIFICATION),
+    ]
+    
+    # Process each email through the graph
+    for name, email in test_emails:
+        print("="*60)
+        print(f"📧 Processing: {name}")
+        print("="*60)
+        print(f"From: {email['author']}")
+        print(f"To: {email['to']}")
+        print(f"Subject: {email['subject']}")
+        print()
+        
+        # Invoke the graph
+        response = email_agent.invoke({"email_input": email})
+        
+        # Display messages if any were generated
+        if 'messages' in response and response['messages']:
+            print("\n📬 Agent Messages:")
+            print("-" * 60)
+            for m in response["messages"]:
+                m.pretty_print()
+        else:
+            print("✅ Email processed. No response generated.\n")
+        
+        print()
+
+
+def test_single_email_detailed():
+    """Test a single email with detailed output."""
+    print("\n" + "="*60)
+    print("🔍 DETAILED SINGLE EMAIL TEST")
+    print("="*60)
+    
+    # Create agent
+    email_agent = create_email_agent()
+    
+    # Use the colleague question
+    email = COLLEAGUE_QUESTION
+    
+    print(f"\n📧 Email Details:")
+    print(f"   From: {email['author']}")
+    print(f"   To: {email['to']}")
+    print(f"   Subject: {email['subject']}")
+    print(f"\n📝 Body:")
+    print(f"{email['email_thread']}")
+    print("\n" + "-"*60)
+    print("🤔 Processing through LangGraph workflow...\n")
+    
+    # Process
+    response = email_agent.invoke({"email_input": email})
+    
+    # Show all messages
+    print("\n📬 Complete Message Thread:")
+    print("="*60)
+    if 'messages' in response and response['messages']:
+        for i, m in enumerate(response["messages"], 1):
+            print(f"\n--- Message {i} ---")
+            m.pretty_print()
     
     print("\n" + "="*60)
-    print(f"📧 Testing: {email_name}")
-    print("="*60)
-    print(f"From: {email['author']}")
-    print(f"Subject: {email['subject']}")
-    
-    # Get the router LLM
-    llm_router = get_router_llm()
-    
-    # Format the system prompt
-    system_prompt = triage_system_prompt.format(
-        full_name=PROFILE["full_name"],
-        name=PROFILE["name"],
-        examples=None,
-        user_profile_background=PROFILE["user_profile_background"],
-        triage_no=PROMPT_INSTRUCTIONS["triage_rules"]["ignore"],
-        triage_notify=PROMPT_INSTRUCTIONS["triage_rules"]["notify"],
-        triage_email=PROMPT_INSTRUCTIONS["triage_rules"]["respond"],
-    )
-    
-    # Format the user prompt
-    user_prompt = triage_user_prompt.format(
-        author=email["author"],
-        to=email["to"],
-        subject=email["subject"],
-        email_thread=email["email_thread"],
-    )
-    
-    # Invoke the router
-    print("\n🤔 Analyzing...")
-    result = llm_router.invoke([
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt},
-    ])
-    
-    # Display results
-    classification_emoji = {
-        "ignore": "🚫",
-        "notify": "🔔",
-        "respond": "📧"
-    }
-    
-    emoji = classification_emoji.get(result.classification, "❓")
-    print(f"\n{emoji} CLASSIFICATION: {result.classification.upper()}")
-    print(f"\n💭 REASONING:")
-    print(f"   {result.reasoning}")
 
 
 def main():
-    """Run triage tests on sample emails."""
+    """Run the email agent tests."""
+
+    show_graph()
+    
+    # Run the main workflow test
+    test_langgraph_workflow()
+    
+    # Optional: Run detailed single email test
+    # test_single_email_detailed()
     
     print("="*60)
-    print("🤖 EMAIL ASSISTANT - TRIAGE TESTING")
-    print("="*60)
-    print(f"\n👤 Assistant for: {PROFILE['full_name']}")
-    print(f"📋 Background: {PROFILE['user_profile_background']}")
-    
-    # Test all sample emails
-    test_triage(COLLEAGUE_QUESTION, "Colleague Question")
-    test_triage(MARKETING_EMAIL, "Marketing Email")
-    test_triage(SICK_NOTIFICATION, "Sick Notification")
-    
-    print("\n" + "="*60)
-    print("✅ Testing complete!")
+    print("✅ All workflows complete!")
     print("="*60)
 
 
