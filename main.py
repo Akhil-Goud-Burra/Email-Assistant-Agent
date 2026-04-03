@@ -1,20 +1,19 @@
 """Main entry point for the email assistant."""
-
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
 from config.profile import PROFILE
+from config.memory import create_memory_store  # Import memory store
 from tests.test_email_samples import COLLEAGUE_QUESTION, MARKETING_EMAIL, SICK_NOTIFICATION
 from graph.email_agent import create_email_agent
 
 
-def show_graph():
+def show_graph(store):
     """Quick graph visualization."""
-    agent = create_email_agent()
+    agent = create_email_agent(store)
     
-    # Try PNG first
     try:
         with open("graph.png", "wb") as f:
             f.write(agent.get_graph(xray=True).draw_mermaid_png())
@@ -22,18 +21,26 @@ def show_graph():
     except Exception:
         print(agent.get_graph(xray=True).draw_ascii())
 
+
 def test_langgraph_workflow():
-    """Test the complete LangGraph workflow with multiple emails."""
+    """Test the complete LangGraph workflow with memory."""
     print("="*60)
-    print("🤖 LANGGRAPH EMAIL AGENT WORKFLOW")
+    print("🤖 LANGGRAPH EMAIL AGENT WORKFLOW WITH MEMORY")
     print("="*60)
     print(f"\n👤 Assistant for: {PROFILE['full_name']}")
     print(f"📋 Background: {PROFILE['user_profile_background']}\n")
     
-    # Create the email agent graph
+    # Create memory store
+    print("🧠 Initializing memory store...")
+    store = create_memory_store()
+    
+    # Create the email agent graph with memory
     print("🔧 Building email agent graph...")
-    email_agent = create_email_agent()
+    email_agent = create_email_agent(store)
     print("✅ Graph compiled successfully!\n")
+
+    # Configuration with user ID
+    config = {"configurable": {"langgraph_user_id": "john_doe"}}
 
     # Test emails
     test_emails = [
@@ -52,8 +59,8 @@ def test_langgraph_workflow():
         print(f"Subject: {email['subject']}")
         print()
         
-        # Invoke the graph
-        response = email_agent.invoke({"email_input": email})
+        # Invoke the graph with config
+        response = email_agent.invoke({"email_input": email}, config=config)
         
         # Display messages if any were generated
         if 'messages' in response and response['messages']:
@@ -65,53 +72,60 @@ def test_langgraph_workflow():
             print("✅ Email processed. No response generated.\n")
         
         print()
-
-
-def test_single_email_detailed():
-    """Test a single email with detailed output."""
+    
+    # Show stored memories
     print("\n" + "="*60)
-    print("🔍 DETAILED SINGLE EMAIL TEST")
+    print("🧠 STORED MEMORIES")
     print("="*60)
+    namespaces = store.list_namespaces()
+    print(f"Namespaces: {namespaces}")
     
-    # Create agent
-    email_agent = create_email_agent()
+    if namespaces:
+        memories = store.search(('email_assistant', 'john_doe', 'collection'))
+        print(f"\nTotal memories stored: {len(memories)}")
+        for i, memory in enumerate(memories, 1):
+            print(f"\n--- Memory {i} ---")
+            print(memory)
     
-    # Use the colleague question
-    email = COLLEAGUE_QUESTION
-    
-    print(f"\n📧 Email Details:")
-    print(f"   From: {email['author']}")
-    print(f"   To: {email['to']}")
-    print(f"   Subject: {email['subject']}")
-    print(f"\n📝 Body:")
-    print(f"{email['email_thread']}")
-    print("\n" + "-"*60)
-    print("🤔 Processing through LangGraph workflow...\n")
-    
-    # Process
-    response = email_agent.invoke({"email_input": email})
-    
-    # Show all messages
-    print("\n📬 Complete Message Thread:")
+    # Add follow-up test after the initial emails are processed
+    print("\n" + "="*60)
+    print("🔄 TESTING FOLLOW-UP WITH MEMORY")
     print("="*60)
+
+    followup_email = {
+        "author": "Alice Smith <alice.smith@company.com>",
+        "to": "John Doe <john.doe@company.com>",
+        "subject": "Re: Quick question about API documentation",
+        "email_thread": """Hi John,
+
+Can you recall the previous email I sent you?
+
+Thanks,
+Alice"""
+    }
+
+    print(f"From: {followup_email['author']}")
+    print(f"Subject: {followup_email['subject']}")
+    print()
+
+    response = email_agent.invoke({"email_input": followup_email}, config=config)
+
     if 'messages' in response and response['messages']:
-        for i, m in enumerate(response["messages"], 1):
-            print(f"\n--- Message {i} ---")
+        print("\n📬 Agent Response:")
+        print("-" * 60)
+        for m in response["messages"]:
             m.pretty_print()
-    
-    print("\n" + "="*60)
 
 
 def main():
     """Run the email agent tests."""
-
-    show_graph()
+    # Create store once
+    store = create_memory_store()
+    
+    show_graph(store)
     
     # Run the main workflow test
     test_langgraph_workflow()
-    
-    # Optional: Run detailed single email test
-    # test_single_email_detailed()
     
     print("="*60)
     print("✅ All workflows complete!")
