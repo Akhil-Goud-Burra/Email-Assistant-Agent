@@ -45,7 +45,7 @@ def triage_router(state: State) -> Command[Literal["response_agent", "__end__"]]
     return Command(goto=goto, update=update)
 
 
-def create_email_agent():
+def create_email_agent(store): # Accept store parameter to pass memory store
     """
     Build and compile the email agent graph.
 
@@ -55,8 +55,8 @@ def create_email_agent():
     email_agent = StateGraph(State)
 
     email_agent.add_node("triage_router", triage_router)
-    email_agent.add_node("response_agent", create_response_agent())
+    email_agent.add_node("response_agent", create_response_agent(store))
 
     email_agent.add_edge(START, "triage_router")
 
-    return email_agent.compile()
+    return email_agent.compile(store=store) # Pass memory store to compile graph
