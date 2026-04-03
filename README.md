@@ -8,4 +8,29 @@
 * python main.py
 
 # Architecture
-<img width="1236" height="1032" alt="image" src="https://github.com/user-attachments/assets/e339773f-32d2-4eed-ac3a-148102daf9c1" />
+┌─────────────────────────────────────────────┐
+│           INCOMING EMAIL                    │
+│  (from Alice, subject, body, etc.)          │
+└──────────────────┬──────────────────────────┘
+                   ↓
+┌─────────────────────────────────────────────┐
+│         TRIAGE ROUTER NODE                  │
+│  - Formats prompts with user context        │
+│  - Calls GPT-4o-mini with Router schema     │
+│  - Returns: ignore/notify/respond           │
+└──────────┬──────────────────────────────────┘
+           │
+           ├─ IGNORE ──→ END
+           ├─ NOTIFY ──→ END
+           └─ RESPOND ──→ ┌─────────────────────────┐
+                          │  RESPONSE AGENT NODE    │
+                          │  - ReAct agent          │
+                          │  - Has access to tools: │
+                          │    • write_email        │
+                          │    • schedule_meeting   │
+                          │    • check_calendar     │
+                          │  - Calls GPT-4o         │
+                          │  - Generates response   │
+                          └────────────┬────────────┘
+                                       ↓
+                                      END
